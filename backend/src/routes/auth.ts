@@ -13,7 +13,7 @@ router.post("/login",[
 ], async (req:Request, res:Response)=>{
     const errors=validationResult(req);
     if(!errors.isEmpty()){
-        res.send(400).json({message:errors.array()});
+        res.status(400).json({message:errors.array()});
         return;
     }
     const {email,password}=req.body;
@@ -21,13 +21,13 @@ router.post("/login",[
    try {
     let user=await User.findOne({email});
     if(!user){
-        res.send(400).json({message:"Invalid Credentials"});
+        res.status(400).json({message:"Invalid Credentials"});
         return;
     }
 
     let isMatch=await bcrypt.compare(password,user.password);
     if(!isMatch){
-        res.send(400).json({message:"Invalid Credentials"});
+        res.status(400).json({message:"Invalid Credentials"});
         return;
     }
 
