@@ -11,13 +11,14 @@ export type SignInFormData={
 }
 const SignIn=()=>{
     const {register,formState:{errors}, handleSubmit}= useForm<SignInFormData>();
-    const {showToast}=useAppContext();
+    const {showToast, setIsLoggedIn}=useAppContext();
     const navigate=useNavigate();
     const queryClient=useQueryClient();
 
     const mutation=useMutation(apiClient.signIn, {
         onSuccess:async ()=>{
            showToast({message:"Sign In Successfull", type:"SUCCESS"});
+           setIsLoggedIn(true);
            await queryClient.invalidateQueries("verifyToken");
             navigate("/");
         },

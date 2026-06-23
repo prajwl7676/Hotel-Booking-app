@@ -26,7 +26,7 @@ const Register=()=>{
         onSuccess:async ()=>{
             showToast({message:"Registration Successfull!",type:"SUCCESS"});
             await queryClient.invalidateQueries("verifyToken");
-            navigate("/");
+            navigate("/sign-in");
         },
         onError:(error:Error)=>{
             showToast({message:error.message, type:"ERROR"})

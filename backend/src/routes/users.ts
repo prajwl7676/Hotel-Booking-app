@@ -13,7 +13,7 @@ router.post('/register', [
 ], async (req:Request, res:Response)=>{
     const errors=validationResult(req);
     if(!errors.isEmpty()){
-        res.status(400).json({meassage:errors.array()});
+        res.status(400).json({message:errors.array()});
         return;
     }
      try {
@@ -30,7 +30,7 @@ router.post('/register', [
 
         const token=jwt.sign(
             {userId:user.id},
-            process.env.JWT_SECRET_Key as string,
+            process.env.JWT_SECRET_KEY as string,
             {
                 expiresIn:'1d'
             }
@@ -46,7 +46,7 @@ router.post('/register', [
         res.status(200).send({message:"registration Successfull"});
         return;
     } catch (error) {
-        res.status(500).send({meassage:"Something went wrong"});
+        res.status(500).send({message:"Something went wrong"});
         console.log(error);
     }
 });

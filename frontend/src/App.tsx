@@ -12,81 +12,123 @@ import AddHotels from "./pages/AddHotels";
 import MyHotels from "./pages/MyHotels";
 import EditHotel from "./pages/EditHotel";
 import Search from "./pages/Search";
+import MyBookings from "./pages/MyBookings";
 
-const App = () => {
-  const { isLoggedIn } = useAppContext();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isLoggedIn, isLoading } = useAppContext();
+  
+  if (isLoading) {
+    return <span>Loading...</span>;
+  }
+
+  if (!isLoggedIn) {
+    return <Navigate to="/sign-in" />;
+  }
+  return <>{children}</>;
+};
+
+const AppRoutes = () => {
+  const { isLoggedIn, isLoading } = useAppContext();
+  
+  if (isLoading) {
+    return <span>Loading...</span>;
+  }
+
   return (
-    <Router>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <p>Home Page</p>
-            </Layout>
-          }
-        ></Route>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <Layout>
+            <p>Home Page</p>
+          </Layout>
+        }
+      ></Route>
 
-        <Route
-          path="/search"
-          element={
-            <Layout>
-              <Search/>
-            </Layout>
-          }
-        ></Route>
+      <Route
+        path="/search"
+        element={
+          <Layout>
+            <Search/>
+          </Layout>
+        }
+      ></Route>
 
-        <Route
-          path="/register"
-          element={
-            <Layout>
-              <Register></Register>
-            </Layout>
-          }
-        ></Route>
+      <Route
+        path="/register"
+        element={
+          <Layout>
+            <Register></Register>
+          </Layout>
+        }
+      ></Route>
 
-        <Route
-          path="/sign-in"
-          element={
+      <Route
+        path="/sign-in"
+        element={
+          isLoggedIn ? (
+            <Navigate to="/" />
+          ) : (
             <Layout>
               <SignIn></SignIn>
             </Layout>
-          }
-        ></Route>
+          )
+        }
+      ></Route>
 
-        {isLoggedIn && (
-          <>
-            <Route
-              path="/add-hotel"
-              element={
-                <Layout>
-                  <AddHotels />
-                </Layout>
-              }
-            />
+      <Route
+        path="/add-hotel"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <AddHotels />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
-             <Route
-              path="/edit-hotel/:hotelId"
-              element={
-                <Layout>
-                  <EditHotel />
-                </Layout>
-              }
-            />
+      <Route
+        path="/edit-hotel/:hotelId"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <EditHotel />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
-            <Route
-              path="/my-hotels"
-              element={
-                <Layout>
-                  <MyHotels />
-                </Layout>
-              }
-            />
-          </>
-        )}
+      <Route
+        path="/my-hotels"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <MyHotels />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
-        <Route path="*" element={<Navigate to="/"></Navigate>}></Route>
-      </Routes>
+      <Route
+        path="/my-bookings"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <MyBookings />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/"></Navigate>}></Route>
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <AppRoutes />
     </Router>
   );
 };

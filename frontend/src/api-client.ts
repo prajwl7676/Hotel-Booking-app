@@ -31,7 +31,7 @@ export const validateToken= async ()=>{
     if(!response.ok){
         throw new Error("Token Invalid")
     }
-    response.json();
+    return response.json();
 }
 
 export const signIn= async (formData:SignInFormData)=>{
@@ -47,8 +47,8 @@ export const signIn= async (formData:SignInFormData)=>{
     const body=await response.json();
     if(!response.ok){
         throw new Error(body.message);
-        return body;
     }
+    return body;
 }
 
 export const signOut= async ()=>{

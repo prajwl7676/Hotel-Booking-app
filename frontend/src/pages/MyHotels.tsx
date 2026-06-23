@@ -5,13 +5,17 @@ import { BsBuilding, BsMap } from "react-icons/bs";
 import { BiHotel, BiMoney, BiStar } from "react-icons/bi";
 
 const MyHotels = () => {
-  const { data: hotelData } = useQuery(
+  const { data: hotelData, isLoading } = useQuery(
     "fetchMyHotels",
     apiClient.fetchMyHotels,
     {
       onError: () => {},
     }
   );
+
+  if (isLoading) {
+    return <span>Loading...</span>;
+  }
 
   if (!hotelData) {
     return <span>No Hotels found</span>;
@@ -31,6 +35,7 @@ const MyHotels = () => {
       <div className="grid grid-cols-1 gap-8">
         {hotelData.map((hotel) => (
           <div
+            key={hotel._id}
             data-testid="hotel-card"
             className="flex flex-col justify-between border border-slate-300 rounded-lg p-8 gap-5"
           >

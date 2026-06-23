@@ -5,11 +5,12 @@ import { useNavigate } from "react-router-dom";
 
 const SignOutButton=()=>{
     const queryClient= useQueryClient();
-    const {showToast}= useAppContext();
+    const {showToast, setIsLoggedIn}= useAppContext();
     const navigate=useNavigate();
     const mutation=useMutation(apiClient.signOut, {
         onSuccess: async ()=>{
             showToast({message:"logout successful!", type:"SUCCESS"});
+            setIsLoggedIn(false);
             await queryClient.invalidateQueries("verifyToken");
             navigate("/");
         },
