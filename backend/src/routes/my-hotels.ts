@@ -4,7 +4,7 @@ import cloudinary from "cloudinary";
 
 import Hotel from "../models/hotel"
 import verifyToken from "../middleware/auth";
-import { body } from "express-validator";
+import { body, validationResult } from "express-validator";
 import { HotelType } from "../shared/types";
 
 const router = express.Router();
@@ -16,19 +16,28 @@ const upload = multer({
   },
 });
 
+const hotelValidators = [
+  body("name").notEmpty().withMessage("Name is required"),
+  body("city").notEmpty().withMessage("City is required"),
+  body("description").notEmpty().withMessage("Description is required"),
+  body("type").notEmpty().withMessage("Hotel type is required"),
+  body("pricePerNight").notEmpty().isNumeric().withMessage("Price per night is required"),
+  body("facilities").notEmpty().isArray().withMessage("Facilities are required"),
+];
+
 router.post(
   "/",
   verifyToken,
-  [body("name").notEmpty().withMessage("Name is required"),
-    body("city").notEmpty().withMessage("City is required"),
-    body("description").notEmpty().withMessage("Description is required"),
-    body("type").notEmpty().withMessage("Hotel type is required"),
-    body("pricePerNight").notEmpty().isNumeric().withMessage("Price per night is required"),
-    body("facilities").notEmpty().isArray().withMessage("Price per night is required"),
-  ],
   upload.array("imageFiles"),
+  hotelValidators,
   async (req: Request, res: Response) => {
       try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ message: errors.array() });
+        return;
+      }
+
       const imageFiles = req.files as Express.Multer.File[];
       const newHotel: HotelType = req.body;
 
@@ -71,34 +80,19 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-router.get("/", verifyToken, async (req: Request, res: Response) => {
-  try {
-    const hotels = await Hotel.find({ userId: req.userId });
-    res.json(hotels);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching hotels" });
-  }
-});
-
-router.get("/:id", verifyToken, async (req: Request, res: Response) => {
-  const id = req.params.id.toString();
-  try {
-    const hotel = await Hotel.findOne({
-      _id: id,
-      userId: req.userId,
-    });
-    res.json(hotel);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching hotels" });
-  }
-});
-
 router.put(
   "/:hotelId",
   verifyToken,
   upload.array("imageFiles"),
+  hotelValidators,
   async (req: Request, res: Response) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ message: errors.array() });
+        return;
+      }
+
       const updatedHotel: HotelType = req.body;
       updatedHotel.lastUpdate = new Date();
 
@@ -125,6 +119,7 @@ router.put(
       ];
 
       await hotel.save();
+      res.status(201).json(hotel);
     } catch (error) {
       res.status(500).json({ message: "Something went wrong" });
     }
@@ -136,7 +131,7 @@ async function uploadImages(imageFiles: Express.Multer.File[]) {
     const b64 = Buffer.from(image.buffer).toString("base64");
     let dataURI = "data:" + image.mimetype + ";base64," + b64;
     const res = await cloudinary.v2.uploader.upload(dataURI);
-    return res.url;
+    return res.secure_url;
   });
 
   const imageUrls = await Promise.all(uploadPromises);
