@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import { isValidObjectId } from "mongoose";
 import Hotel from "../models/hotel";
 import { HotelSearchResponse } from "../shared/types";
 
@@ -46,6 +47,24 @@ router.get("/search", async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.log("error", error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+router.get("/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    if (!isValidObjectId(id)) {
+      res.status(400).json({ message: "Invalid hotel ID" });
+      return;
+    }
+    const hotel = await Hotel.findById(id);
+    if (!hotel) {
+      res.status(404).json({ message: "Hotel not found" });
+      return;
+    }
+    res.json(hotel);
+  } catch (error) {
     res.status(500).json({ message: "Something went wrong" });
   }
 });
