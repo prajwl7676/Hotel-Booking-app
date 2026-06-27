@@ -12,7 +12,8 @@ type SearchContext = {
     checkIn: Date,
     checkOut: Date,
     adultCount: number,
-    childCount: number
+    childCount: number,
+    hotelId?: string
   ) => void;
 };
 
