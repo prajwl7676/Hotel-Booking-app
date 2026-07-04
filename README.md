@@ -1,5 +1,11 @@
 # Holidays.com — Full-Stack Hotel Booking Platform
 
+**Currently Deployed:** [https://hotel-booking-app-vql7.onrender.com](https://hotel-booking-app-vql7.onrender.com)
+
+**Test Credentials (to see protected routes):**
+*   **Email:** `test1@gmail.com`
+*   **Password:** `Test@123`
+
 A full-stack hotel booking management application built with **TypeScript** across the entire stack. Hotel owners can register, manage their properties with image uploads, and guests can search and book accommodations.
 
 ---
