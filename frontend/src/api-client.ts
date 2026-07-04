@@ -27,6 +27,7 @@ export const register= async (formData:RegisterFormData)=>{
 export const validateToken= async ()=>{
     const response=await fetch(`${API_BASE_URL}/api/auth/validate-token`,{
         credentials:"include",
+        cache:"no-store",
     });
 
     if(!response.ok){

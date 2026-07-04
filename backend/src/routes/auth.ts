@@ -49,6 +49,7 @@ router.post("/login",[
 })
 
 router.get("/validate-token", verifyToken, (req:Request, res:Response)=>{
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
     res.status(200).send({userId:req.userId});
 });
 
