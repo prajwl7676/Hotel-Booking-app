@@ -41,7 +41,7 @@ const AppRoutes = () => {
         path="/"
         element={
           <Layout>
-            <p>Home Page</p>
+            <p>Hello! Hit Search button for hotels listings(home page is under development). You can also login using credentials given in readme file on github to see protected routes or else create a new account.</p>
           </Layout>
         }
       ></Route>
