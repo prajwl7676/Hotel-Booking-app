@@ -13,6 +13,7 @@ import MyHotels from "./pages/MyHotels";
 import EditHotel from "./pages/EditHotel";
 import Search from "./pages/Search";
 import Detail from "./pages/Detail";
+import Home from "./pages/Home";
 import MyBookings from "./pages/MyBookings";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -41,10 +42,10 @@ const AppRoutes = () => {
         path="/"
         element={
           <Layout>
-            <p>Hello! Hit Search button for hotels listings(home page is under development). You can also login using credentials given in readme file on github to see protected routes or else create a new account.</p>
+            <Home />
           </Layout>
         }
-      ></Route>
+      />
 
       <Route
         path="/search"
