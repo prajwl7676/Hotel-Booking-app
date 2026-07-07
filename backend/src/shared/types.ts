@@ -1,3 +1,10 @@
+export type UserType = {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+
 export interface HotelType{
     _id:string;
     userId:string;
