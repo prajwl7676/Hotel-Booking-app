@@ -30,3 +30,19 @@ export type HotelSearchResponse = {
     pages: number;
   };
 };
+
+export type BookingType = {
+  _id: string;
+  userId: string;
+  hotelId: string;
+  checkIn: Date;
+  checkOut: Date;
+  adultCount: number;
+  childCount: number;
+  totalCost: number;
+  paymentIntentId: string;
+};
+
+export type BookingWithHotelType = BookingType & {
+  hotel: HotelType;
+};
