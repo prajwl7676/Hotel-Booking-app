@@ -1,9 +1,14 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "react-query";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 import * as apiClient from "../api-client";
 import { useSearchContext } from "../contexts/SearchContext";
 import BookingDetailsSummary from "../components/BookingDetailsSummary";
 import BookingForm from "../components/BookingForm";
+
+const STRIPE_PUB_KEY = import.meta.env.VITE_STRIPE_PUB_KEY || "";
+const stripePromise = loadStripe(STRIPE_PUB_KEY);
 
 const Booking = () => {
   const { hotelId } = useParams();
@@ -48,11 +53,13 @@ const Booking = () => {
           childCount={search.childCount}
           numberOfNights={numberOfNights}
         />
-        <BookingForm
-          currentUser={currentUser}
-          numberOfNights={numberOfNights}
-          pricePerNight={hotel.pricePerNight}
-        />
+        <Elements stripe={stripePromise}>
+          <BookingForm
+            currentUser={currentUser}
+            numberOfNights={numberOfNights}
+            hotel={hotel}
+          />
+        </Elements>
       </div>
     </div>
   );

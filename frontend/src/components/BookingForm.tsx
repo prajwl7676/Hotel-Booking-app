@@ -1,30 +1,35 @@
 import { useForm } from "react-hook-form";
-import { BsCreditCard2Back } from "react-icons/bs";
-import { UserType } from "../../../backend/src/shared/types";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { StripeCardElement } from "@stripe/stripe-js";
+import { UserType, HotelType } from "../../../backend/src/shared/types";
 import { useAppContext } from "../contexts/AppContext";
+import { useSearchContext } from "../contexts/SearchContext";
+import * as apiClient from "../api-client";
+import { useNavigate } from "react-router-dom";
 
 export type BookingFormData = {
   firstName: string;
   lastName: string;
   email: string;
-  cardNumber: string;
-  cardExpiry: string;
-  cardCvv: string;
 };
 
 type Props = {
   currentUser: UserType;
   numberOfNights: number;
-  pricePerNight: number;
+  hotel: HotelType;
 };
 
-const BookingForm = ({ currentUser, numberOfNights, pricePerNight }: Props) => {
+const BookingForm = ({ currentUser, numberOfNights, hotel }: Props) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const { showToast } = useAppContext();
+  const search = useSearchContext();
+  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<BookingFormData>({
     defaultValues: {
       firstName: currentUser.firstName,
@@ -33,14 +38,54 @@ const BookingForm = ({ currentUser, numberOfNights, pricePerNight }: Props) => {
     },
   });
 
-  const onSubmit = (_data: BookingFormData) => {
-    showToast({
-      message: "Booking confirmed! (Payment integration coming soon)",
-      type: "SUCCESS",
-    });
-  };
+  const totalCost = hotel.pricePerNight * numberOfNights;
 
-  const totalCost = pricePerNight * numberOfNights;
+  const onSubmit = async (formData: BookingFormData) => {
+    if (!stripe || !elements) return;
+
+    try {
+      const { clientSecret, paymentIntentId } =
+        await apiClient.createPaymentIntent(hotel._id, numberOfNights);
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement) as StripeCardElement,
+          billing_details: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+          },
+        },
+      });
+
+      if (result.error) {
+        showToast({
+          message: result.error.message || "Payment failed",
+          type: "ERROR",
+        });
+        return;
+      }
+
+      if (result.paymentIntent?.status === "succeeded") {
+        await apiClient.createBooking({
+          hotelId: hotel._id,
+          checkIn: search.checkIn,
+          checkOut: search.checkOut,
+          adultCount: search.adultCount,
+          childCount: search.childCount,
+          totalCost,
+          paymentIntentId,
+        });
+
+        showToast({ message: "Booking confirmed!", type: "SUCCESS" });
+        navigate("/my-bookings");
+      }
+    } catch (err) {
+      showToast({
+        message: err instanceof Error ? err.message : "Booking failed",
+        type: "ERROR",
+      });
+    }
+  };
 
   return (
     <form
@@ -87,7 +132,7 @@ const BookingForm = ({ currentUser, numberOfNights, pricePerNight }: Props) => {
             Email
           </label>
           <input
-            {...register("email", { required: "Email is required" })}
+            {...register("email")}
             type="email"
             readOnly
             className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm bg-slate-50 text-slate-500 cursor-not-allowed focus:outline-none"
@@ -97,91 +142,23 @@ const BookingForm = ({ currentUser, numberOfNights, pricePerNight }: Props) => {
 
       <hr className="border-slate-200" />
 
-      {/* Payment section */}
+      {/* Stripe card */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 text-slate-700">
-          <BsCreditCard2Back className="text-blue-600" size={20} />
-          <span className="font-semibold">Payment by Card</span>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            Card Number
-          </label>
-          <input
-            {...register("cardNumber", {
-              required: "Card number is required",
-              pattern: {
-                value: /^[\d\s]{16,19}$/,
-                message: "Enter a valid card number",
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          Payment by Card
+        </p>
+        <div className="border border-slate-300 rounded-md p-3 bg-white">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: "14px",
+                  color: "#1e293b",
+                  "::placeholder": { color: "#94a3b8" },
+                },
               },
-            })}
-            placeholder="1234 5678 9012 3456"
-            maxLength={19}
-            className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, "").slice(0, 16);
-              e.target.value = digits.replace(/(.{4})/g, "$1 ").trim();
             }}
           />
-          {errors.cardNumber && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.cardNumber.message}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Expiry (MM/YY)
-            </label>
-            <input
-              {...register("cardExpiry", {
-                required: "Expiry is required",
-                pattern: {
-                  value: /^(0[1-9]|1[0-2])\/\d{2}$/,
-                  message: "Use MM/YY format",
-                },
-              })}
-              placeholder="MM/YY"
-              maxLength={5}
-              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                e.target.value =
-                  val.length > 2 ? `${val.slice(0, 2)}/${val.slice(2)}` : val;
-              }}
-            />
-            {errors.cardExpiry && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.cardExpiry.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              CVV
-            </label>
-            <input
-              {...register("cardCvv", {
-                required: "CVV is required",
-                pattern: {
-                  value: /^\d{3,4}$/,
-                  message: "3 or 4 digits",
-                },
-              })}
-              placeholder="123"
-              maxLength={4}
-              type="password"
-              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            {errors.cardCvv && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.cardCvv.message}
-              </p>
-            )}
-          </div>
         </div>
       </div>
 
@@ -197,9 +174,10 @@ const BookingForm = ({ currentUser, numberOfNights, pricePerNight }: Props) => {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors text-lg"
+        disabled={isSubmitting || !stripe}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-colors text-lg"
       >
-        Confirm Booking
+        {isSubmitting ? "Processing..." : "Confirm Booking"}
       </button>
     </form>
   );
