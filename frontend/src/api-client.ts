@@ -4,6 +4,7 @@ import {
   HotelType,
   HotelSearchResponse,
   UserType,
+  BookingWithHotelType,
 } from "../../backend/src/shared/types";
 
 const API_BASE_URL=import.meta.env.VITE_API_BASE_URL || "";
@@ -172,6 +173,60 @@ export const fetchCurrentUser = async (): Promise<UserType> => {
   });
   if (!response.ok) {
     throw new Error("Error fetching user");
+  }
+  return response.json();
+};
+
+export type PaymentIntentResponse = {
+  paymentIntentId: string;
+  clientSecret: string;
+  totalCost: number;
+};
+
+export const createPaymentIntent = async (
+  hotelId: string,
+  numberOfNights: number
+): Promise<PaymentIntentResponse> => {
+  const response = await fetch(`${API_BASE_URL}/api/bookings/payment-intent`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hotelId, numberOfNights }),
+  });
+  if (!response.ok) {
+    throw new Error("Error creating payment intent");
+  }
+  return response.json();
+};
+
+export type CreateBookingData = {
+  hotelId: string;
+  checkIn: Date;
+  checkOut: Date;
+  adultCount: number;
+  childCount: number;
+  totalCost: number;
+  paymentIntentId: string;
+};
+
+export const createBooking = async (data: CreateBookingData): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error("Error confirming booking");
+  }
+};
+
+export const fetchMyBookings = async (): Promise<BookingWithHotelType[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error("Error fetching bookings");
   }
   return response.json();
 };
