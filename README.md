@@ -6,6 +6,13 @@
 *   **Email:** `test1@gmail.com`
 *   **Password:** `Test@123`
 
+
+**To Test payment flow enter below details:**
+*   **Card number:** `4242 4242 4242 4242`
+*   **Expiry date:** `any date today onwards`
+*   **CVC and ZIP:** `any number`
+
+
 A full-stack hotel booking management application built with **TypeScript** across the entire stack. Hotel owners can register, manage their properties with image uploads, and guests can search, browse, and book accommodations.
 
 ---
@@ -60,7 +67,8 @@ Production build serves the frontend bundle as static files from the Express ser
 - **Facilities** — 8 amenity checkboxes (Free WiFi, Pool, Spa, etc.)
 - **Hotel Search** — Filter by destination, dates, guests, star rating, type, facilities, and max price with sort and pagination
 - **Hotel Detail Page** — Full hotel view with image gallery, facilities, and an inline booking panel (date picker, guest selector, live price total)
-- **Booking Flow** — Checkout page with booking summary and a card payment confirmation form; pre-fills logged-in user's details
+- **Stripe Payment** — Checkout page with booking summary, Stripe card payment, and booking confirmation
+- **My Bookings** — Authenticated users can view all their past and upcoming bookings
 - **Auth-aware CTAs** — Unauthenticated users see "Login to Book" instead of "Book Now"
 - **Home Page** — Latest hotel listings grid linking to detail pages
 - **Responsive UI** — Tailwind CSS utility classes, mobile-friendly layout
@@ -85,6 +93,9 @@ Production build serves the frontend bundle as static files from the Express ser
 | POST | `/api/my-hotels` | Yes | Create hotel (multipart) |
 | GET | `/api/my-hotels/:id` | Yes | Get hotel by ID (owner) |
 | PUT | `/api/my-hotels/:id` | Yes | Update hotel (multipart) |
+| POST | `/api/bookings/payment-intent` | Yes | Create Stripe PaymentIntent |
+| POST | `/api/bookings` | Yes | Confirm booking after payment |
+| GET | `/api/bookings` | Yes | List current user's bookings |
 
 ---
 
@@ -112,11 +123,13 @@ FRONTEND_URL=http://localhost:5174
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+STRIPE_API_KEY=         # Stripe secret key (sk_test_...)
 ```
 
 **Required environment variables — `frontend/.env`:**
 ```
 VITE_API_BASE_URL=http://localhost:7000
+VITE_STRIPE_PUB_KEY=   # Stripe publishable key (pk_test_...)
 ```
 
 ---
@@ -156,6 +169,6 @@ VITE_API_BASE_URL=http://localhost:7000
 | **Auth & Hotel CRUD** | Register, login, logout, create/edit/list hotels, image upload | ✅ Complete |
 | **Search & Discovery** | Hotel search with filters, sort, pagination; detail page | ✅ Complete |
 | **Booking UI** | Checkout page, booking summary, card form, user pre-fill | ✅ Complete |
-| **Booking Backend** | Booking model, creation route, My Bookings page | 🔄 In Progress |
-| **Payment** | Stripe integration, payment-intent flow, webhook | ⏳ Planned |
+| **Booking Backend** | Booking model, creation route, My Bookings page | ✅ Complete |
+| **Payment** | Stripe PaymentIntent flow, card confirmation | ✅ Complete |
 | **Hardening** | Rate limiting, helmet, centralized error handling | ⏳ Planned |
