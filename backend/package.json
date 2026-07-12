@@ -12,8 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@langchain/anthropic": "^1.5.1",
     "@langchain/core": "^1.2.2",
+    "@langchain/google-genai": "^2.2.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "cookie-parser": "^1.4.7",

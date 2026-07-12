@@ -1,6 +1,6 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
-export const llm = new ChatAnthropic({
-  model: "claude-opus-4-8",
+export const llm = new ChatGoogleGenerativeAI({
+  model: "gemini-2.0-flash",
   temperature: 0.4,
 });
