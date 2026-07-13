@@ -2,6 +2,9 @@ import express, { Request, Response } from "express";
 import verifyToken from "../middleware/auth";
 import { descriptionChain } from "../ai/chains/descriptionChain";
 import { searchParserChain } from "../ai/chains/searchParserChain";
+import { emailChain } from "../ai/chains/emailChain";
+import Booking from "../models/booking";
+import Hotel from "../models/hotel";
 
 const router = express.Router();
 
@@ -55,6 +58,49 @@ router.post("/parse-search", async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to parse search query" });
+  }
+});
+
+// POST /api/ai/booking-email
+// Returns an HTML confirmation email for one of the current user's bookings
+router.post("/booking-email", verifyToken, async (req: Request, res: Response) => {
+  const { bookingId } = req.body;
+
+  if (!bookingId) {
+    res.status(400).json({ message: "bookingId is required" });
+    return;
+  }
+
+  try {
+    const booking = await Booking.findOne({ _id: bookingId, userId: req.userId });
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found" });
+      return;
+    }
+
+    const hotel = await Hotel.findById(booking.hotelId);
+    if (!hotel) {
+      res.status(404).json({ message: "Hotel not found" });
+      return;
+    }
+
+    const html = await emailChain.invoke({
+      bookingId:  booking._id.toString(),
+      guestName:  req.userId,
+      hotelName:  hotel.name,
+      city:       hotel.city,
+      country:    hotel.country,
+      checkIn:    new Date(booking.checkIn).toDateString(),
+      checkOut:   new Date(booking.checkOut).toDateString(),
+      adultCount: booking.adultCount,
+      childCount: booking.childCount,
+      totalCost:  booking.totalCost,
+    });
+
+    res.json({ html });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to generate email" });
   }
 });
 
