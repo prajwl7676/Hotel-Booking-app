@@ -1,8 +1,10 @@
 import express, { Request, Response } from "express";
+import { HumanMessage } from "@langchain/core/messages";
 import verifyToken from "../middleware/auth";
 import { descriptionChain } from "../ai/chains/descriptionChain";
 import { searchParserChain } from "../ai/chains/searchParserChain";
 import { emailChain } from "../ai/chains/emailChain";
+import { concierge } from "../ai/agent/graph";
 import Booking from "../models/booking";
 import Hotel from "../models/hotel";
 
@@ -40,6 +42,48 @@ router.post(
     }
   }
 );
+
+// POST /api/ai/chat
+// Streams the AI concierge's response token-by-token via SSE
+router.post("/chat", verifyToken, async (req: Request, res: Response) => {
+  const { message, threadId } = req.body;
+
+  if (!message || typeof message !== "string") {
+    res.status(400).json({ message: "message string is required" });
+    return;
+  }
+
+  res.setHeader("Content-Type",  "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection",    "keep-alive");
+
+  const thread = threadId ?? req.userId;
+  const config = { configurable: { thread_id: thread }, version: "v2" as const };
+
+  try {
+    const stream = concierge.streamEvents(
+      { messages: [new HumanMessage(message)] },
+      config
+    );
+
+    for await (const event of stream) {
+      if (
+        event.event === "on_chat_model_stream" &&
+        event.data?.chunk?.content
+      ) {
+        const token = event.data.chunk.content;
+        res.write(`data: ${JSON.stringify({ type: "token", content: token })}\n\n`);
+      }
+    }
+
+    res.write("data: [DONE]\n\n");
+  } catch (error) {
+    console.log(error);
+    res.write(`data: ${JSON.stringify({ type: "error", content: "Something went wrong" })}\n\n`);
+  } finally {
+    res.end();
+  }
+});
 
 // POST /api/ai/parse-search
 // Public — no auth needed; converts a natural-language query into SearchParams

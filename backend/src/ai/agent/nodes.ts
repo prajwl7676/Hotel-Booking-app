@@ -1,4 +1,4 @@
-import { AIMessage, HumanMessage, BaseMessage } from "@langchain/core/messages";
+import { AIMessage, BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { llm } from "../llm";
@@ -52,7 +52,7 @@ export async function intentClassifier(state: AgentState): Promise<Partial<Agent
   const lastMessage = state.messages[state.messages.length - 1];
   const history = state.messages
     .slice(0, -1)
-    .map((m) => `${m._getType()}: ${m.content}`)
+    .map((m) => `${m.getType()}: ${m.content}`)
     .join("\n");
 
   const result = await classifierPrompt
@@ -83,7 +83,7 @@ Conversation so far:
 
 export async function clarifier(state: AgentState): Promise<Partial<AgentState>> {
   const history = state.messages
-    .map((m) => `${m._getType()}: ${m.content}`)
+    .map((m) => `${m.getType()}: ${m.content}`)
     .join("\n");
 
   const response = await clarifierPrompt.pipe(llm).invoke({ history });
