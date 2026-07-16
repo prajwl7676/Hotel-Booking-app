@@ -11,6 +11,7 @@ import myHotelRoutes from "./routes/my-hotels";
 import hotelRoutes from "./routes/hotels"
 import bookingRoutes from "./routes/bookings"
 import aiRoutes from "./routes/ai"
+import { startHttpMcp } from "./mcp/httpTransport"
 
 cloudinary.config({
     cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
@@ -46,3 +47,5 @@ app.get("*", (_req: Request, res: Response) => {
 app.listen(7000,()=>{
     console.log("server is running succesfully");
 })
+
+startHttpMcp();
