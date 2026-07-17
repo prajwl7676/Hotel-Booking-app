@@ -58,29 +58,46 @@ const ChatWidget = () => {
           const raw = line.slice(5).trim();
           if (raw === "[DONE]") break;
 
+          let payload: { type?: string; content?: string };
           try {
-            const payload = JSON.parse(raw);
-            if (payload.type === "token" && payload.content) {
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  ...updated[updated.length - 1],
-                  text: updated[updated.length - 1].text + payload.content,
-                };
-                return updated;
-              });
-            }
+            payload = JSON.parse(raw);
           } catch {
-            // partial chunk — ignore
+            continue; // partial chunk — ignore
+          }
+
+          if (payload.type === "token" && payload.content) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                text: updated[updated.length - 1].text + payload.content,
+              };
+              return updated;
+            });
+          } else if (payload.type === "error") {
+            throw new Error(payload.content);
           }
         }
       }
+
+      // never leave an empty bubble if the stream ended without content
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last.role === "assistant" && !last.text) {
+          updated[updated.length - 1] = {
+            ...last,
+            text: "Query failed — please try a different query.",
+          };
+        }
+        return updated;
+      });
     } catch {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           ...updated[updated.length - 1],
-          text: "Sorry, something went wrong. Please try again.",
+          text: "Query failed — please try a different query.",
         };
         return updated;
       });

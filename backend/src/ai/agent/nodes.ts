@@ -96,6 +96,25 @@ export async function clarifier(state: AgentState): Promise<Partial<AgentState>>
   return { messages: [new AIMessage(String(response.content))] };
 }
 
+// ── Chitchatter ────────────────────────────────────────────────────────────────
+
+const chitchatPrompt = ChatPromptTemplate.fromTemplate(`
+You are a friendly AI concierge for a hotel booking website. Reply briefly and
+warmly to the user's message, and remind them you can help find or book hotels.
+
+Conversation so far:
+{history}
+`);
+
+export async function chitchatter(state: AgentState): Promise<Partial<AgentState>> {
+  const history = state.messages
+    .map((m) => `${m.getType()}: ${m.content}`)
+    .join("\n");
+
+  const response = await chitchatPrompt.pipe(getLlm(state.provider)).invoke({ history });
+  return { messages: [new AIMessage(String(response.content))] };
+}
+
 // ── Hotel searcher ─────────────────────────────────────────────────────────────
 
 export async function hotelSearcher(state: AgentState): Promise<Partial<AgentState>> {

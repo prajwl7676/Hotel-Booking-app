@@ -70,14 +70,31 @@ router.post("/chat", verifyToken, async (req: Request, res: Response) => {
       config
     );
 
+    let sentTokens = false;
     for await (const event of stream) {
       if (
         event.event === "on_chat_model_stream" &&
         event.data?.chunk?.content
       ) {
         const token = event.data.chunk.content;
+        sentTokens = true;
         res.write(`data: ${JSON.stringify({ type: "token", content: token })}\n\n`);
       }
+    }
+
+    // Some nodes return hardcoded AIMessages that never pass through the LLM,
+    // so no stream events fire — send the final message as a single token
+    if (!sentTokens) {
+      const snapshot = await concierge.getState({
+        configurable: { thread_id: thread },
+      });
+      const messages = snapshot?.values?.messages ?? [];
+      const last = messages[messages.length - 1];
+      const text =
+        last?.getType?.() === "ai" && typeof last.content === "string" && last.content
+          ? last.content
+          : "Sorry, I couldn't process that query. Please try a different one.";
+      res.write(`data: ${JSON.stringify({ type: "token", content: text })}\n\n`);
     }
 
     res.write("data: [DONE]\n\n");

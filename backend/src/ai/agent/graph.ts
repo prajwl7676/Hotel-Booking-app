@@ -4,6 +4,7 @@ import {
   AgentState,
   intentClassifier,
   clarifier,
+  chitchatter,
   hotelSearcher,
   presenter,
   bookingInitiator,
@@ -40,6 +41,7 @@ const AgentAnnotation = Annotation.Root({
 const graph = new StateGraph(AgentAnnotation)
   .addNode("intent_classifier", intentClassifier)
   .addNode("clarifier",         clarifier)
+  .addNode("chitchatter",       chitchatter)
   .addNode("hotel_searcher",    hotelSearcher)
   .addNode("presenter",         presenter)
   .addNode("booking_initiator", bookingInitiator)
@@ -48,10 +50,11 @@ const graph = new StateGraph(AgentAnnotation)
     search:   "hotel_searcher",
     clarify:  "clarifier",
     book:     "booking_initiator",
-    chitchat: "presenter",
+    chitchat: "chitchatter",
   })
   .addEdge("hotel_searcher",    "presenter")
   .addEdge("clarifier",         "__end__")
+  .addEdge("chitchatter",       "__end__")
   .addEdge("presenter",         "__end__")
   .addEdge("booking_initiator", "__end__");
 
