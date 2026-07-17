@@ -16,6 +16,7 @@ import Detail from "./pages/Detail";
 import Home from "./pages/Home";
 import Booking from "./pages/Booking";
 import MyBookings from "./pages/MyBookings";
+import ChatWidget from "./components/ChatWidget";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoggedIn, isLoading } = useAppContext();
@@ -38,6 +39,7 @@ const AppRoutes = () => {
   }
 
   return (
+    <>
     <Routes>
       <Route
         path="/"
@@ -145,6 +147,8 @@ const AppRoutes = () => {
 
       <Route path="*" element={<Navigate to="/"></Navigate>}></Route>
     </Routes>
+    {isLoggedIn && <ChatWidget />}
+    </>
   );
 };
 
