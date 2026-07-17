@@ -31,6 +31,10 @@ const AgentAnnotation = Annotation.Root({
     reducer: (_, b) => b,
     default: () => null,
   }),
+  provider: Annotation<AgentState["provider"]>({
+    reducer: (_, b) => b,
+    default: () => null,
+  }),
 });
 
 const graph = new StateGraph(AgentAnnotation)

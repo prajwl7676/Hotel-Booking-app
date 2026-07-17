@@ -5,6 +5,7 @@ import { descriptionChain } from "../ai/chains/descriptionChain";
 import { searchParserChain } from "../ai/chains/searchParserChain";
 import { emailChain } from "../ai/chains/emailChain";
 import { concierge } from "../ai/agent/graph";
+import { DEFAULT_PROVIDER, LlmProvider } from "../ai/llm";
 import Booking from "../models/booking";
 import Hotel from "../models/hotel";
 
@@ -46,12 +47,15 @@ router.post(
 // POST /api/ai/chat
 // Streams the AI concierge's response token-by-token via SSE
 router.post("/chat", verifyToken, async (req: Request, res: Response) => {
-  const { message, threadId } = req.body;
+  const { message, threadId, provider } = req.body;
 
   if (!message || typeof message !== "string") {
     res.status(400).json({ message: "message string is required" });
     return;
   }
+
+  const llmProvider: LlmProvider =
+    provider === "gemini" ? "gemini" : DEFAULT_PROVIDER;
 
   res.setHeader("Content-Type",  "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -62,7 +66,7 @@ router.post("/chat", verifyToken, async (req: Request, res: Response) => {
 
   try {
     const stream = concierge.streamEvents(
-      { messages: [new HumanMessage(message)] },
+      { messages: [new HumanMessage(message)], provider: llmProvider },
       config
     );
 

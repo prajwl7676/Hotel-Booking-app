@@ -1,7 +1,7 @@
 import { AIMessage, BaseMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
-import { llm } from "../llm";
+import { getLlm, LlmProvider } from "../llm";
 import { searchHotels } from "../../mcp/tools";
 
 // ── State shape ────────────────────────────────────────────────────────────────
@@ -14,6 +14,7 @@ export type AgentState = {
   searchParams:  Record<string, unknown> | null;
   hotels:        unknown[];
   selectedHotel: unknown | null;
+  provider:      LlmProvider | null;
 };
 
 // ── Intent classifier ──────────────────────────────────────────────────────────
@@ -22,14 +23,14 @@ const IntentSchema = z.object({
   intent: z
     .enum(["search", "book", "clarify", "chitchat"])
     .describe("The user's primary intent"),
-  destination:  z.string().optional(),
-  adultCount:   z.number().int().optional(),
-  childCount:   z.number().int().optional(),
-  maxPrice:     z.number().optional(),
-  types:        z.array(z.string()).optional(),
-  stars:        z.array(z.string()).optional(),
-  facilities:   z.array(z.string()).optional(),
-  sortOption:   z.string().optional(),
+  destination:  z.string().nullish(),
+  adultCount:   z.number().int().nullish(),
+  childCount:   z.number().int().nullish(),
+  maxPrice:     z.number().nullish(),
+  types:        z.array(z.string()).nullish(),
+  stars:        z.array(z.string()).nullish(),
+  facilities:   z.array(z.string()).nullish(),
+  sortOption:   z.string().nullish(),
 });
 
 const classifierPrompt = ChatPromptTemplate.fromTemplate(`
@@ -41,6 +42,9 @@ Intents:
 - book: user wants to book a specific hotel they have already seen
 - clarify: the query is too vague to search (missing destination or dates)
 - chitchat: general question unrelated to hotel search or booking
+
+Rule: if the user wants a hotel but no destination is known from the
+conversation, the intent MUST be "clarify", not "search".
 
 Conversation so far:
 {history}
@@ -56,17 +60,19 @@ export async function intentClassifier(state: AgentState): Promise<Partial<Agent
     .join("\n");
 
   const result = await classifierPrompt
-    .pipe(llm.withStructuredOutput(IntentSchema))
+    .pipe(getLlm(state.provider).withStructuredOutput(IntentSchema))
     .invoke({ history, message: lastMessage.content });
 
-  const { intent, ...searchParams } = result;
-  const hasParams = Object.keys(searchParams).some(
-    (k) => searchParams[k as keyof typeof searchParams] !== undefined
+  // Llama (via Groq) fills unknown fields with null instead of omitting them
+  const { intent, ...rest } = result;
+  const searchParams = Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v !== undefined && v !== null)
   );
 
   return {
     intent,
-    searchParams: hasParams ? searchParams : state.searchParams,
+    searchParams:
+      Object.keys(searchParams).length > 0 ? searchParams : state.searchParams,
   };
 }
 
@@ -86,7 +92,7 @@ export async function clarifier(state: AgentState): Promise<Partial<AgentState>>
     .map((m) => `${m.getType()}: ${m.content}`)
     .join("\n");
 
-  const response = await clarifierPrompt.pipe(llm).invoke({ history });
+  const response = await clarifierPrompt.pipe(getLlm(state.provider)).invoke({ history });
   return { messages: [new AIMessage(String(response.content))] };
 }
 
@@ -119,7 +125,7 @@ export async function presenter(state: AgentState): Promise<Partial<AgentState>>
     };
   }
 
-  const response = await presenterPrompt.pipe(llm).invoke({
+  const response = await presenterPrompt.pipe(getLlm(state.provider)).invoke({
     hotels: JSON.stringify(state.hotels.slice(0, 3)),
   });
   return { messages: [new AIMessage(String(response.content))] };
@@ -139,7 +145,7 @@ User message: {message}
 
 export async function bookingInitiator(state: AgentState): Promise<Partial<AgentState>> {
   const lastMessage = state.messages[state.messages.length - 1];
-  const response = await bookingPrompt.pipe(llm).invoke({
+  const response = await bookingPrompt.pipe(getLlm(state.provider)).invoke({
     hotels: JSON.stringify(state.hotels.slice(0, 3)),
     message: lastMessage.content,
   });
