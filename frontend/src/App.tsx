@@ -147,7 +147,7 @@ const AppRoutes = () => {
 
       <Route path="*" element={<Navigate to="/"></Navigate>}></Route>
     </Routes>
-    {isLoggedIn && <ChatWidget />}
+    <ChatWidget />
     </>
   );
 };

@@ -22,6 +22,7 @@ cloudinary.config({
 mongoose.connect(process.env.DB_CONNECTION_STRING as string);
 
 const app=express();
+app.set("trust proxy", 1); // Render sits behind a proxy — needed for real client IPs
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));

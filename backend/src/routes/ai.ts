@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { HumanMessage } from "@langchain/core/messages";
 import verifyToken from "../middleware/auth";
 import { descriptionChain } from "../ai/chains/descriptionChain";
@@ -10,6 +11,15 @@ import Booking from "../models/booking";
 import Hotel from "../models/hotel";
 
 const router = express.Router();
+
+// Protects the free-tier LLM quota on the public AI endpoints
+const publicAiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 30,                // per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests — please try again in a bit" },
+});
 
 // POST /api/ai/generate-description
 // Authenticated hotel owners call this to get AI-generated marketing copy
@@ -45,8 +55,9 @@ router.post(
 );
 
 // POST /api/ai/chat
+// Public — recruiters/visitors can try the concierge without an account.
 // Streams the AI concierge's response token-by-token via SSE
-router.post("/chat", verifyToken, async (req: Request, res: Response) => {
+router.post("/chat", publicAiLimiter, async (req: Request, res: Response) => {
   const { message, threadId, provider } = req.body;
 
   if (!message || typeof message !== "string") {
@@ -61,7 +72,7 @@ router.post("/chat", verifyToken, async (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection",    "keep-alive");
 
-  const thread = threadId ?? req.userId;
+  const thread = threadId ?? req.userId ?? "anonymous";
   const config = { configurable: { thread_id: thread }, version: "v2" as const };
 
   try {
@@ -108,7 +119,7 @@ router.post("/chat", verifyToken, async (req: Request, res: Response) => {
 
 // POST /api/ai/parse-search
 // Public — no auth needed; converts a natural-language query into SearchParams
-router.post("/parse-search", async (req: Request, res: Response) => {
+router.post("/parse-search", publicAiLimiter, async (req: Request, res: Response) => {
   const { query } = req.body;
 
   if (!query || typeof query !== "string") {

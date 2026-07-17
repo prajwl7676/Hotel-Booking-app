@@ -68,7 +68,7 @@ Production build serves the frontend bundle as static files from the Express ser
 - **Facilities** — 8 amenity checkboxes (Free WiFi, Pool, Spa, etc.)
 - **Hotel Search** — Filter by destination, dates, guests, star rating, type, facilities, and max price with sort and pagination
 - **Hotel Detail Page** — Full hotel view with image gallery, facilities, and an inline booking panel (date picker, guest selector, live price total)
-- **AI Concierge Chat** — Floating chat widget (logged-in users) backed by a 6-node LangGraph agent with intent routing, hotel search via MCP tools, token-by-token SSE streaming, and a Groq/Gemini model selector
+- **AI Concierge Chat** — Floating chat widget (no login required — try it!) backed by a 6-node LangGraph agent with intent routing, hotel search via MCP tools, token-by-token SSE streaming, and a Groq/Gemini model selector
 - **Stripe Payment** — Checkout page with booking summary, Stripe card payment, and booking confirmation
 - **My Bookings** — Authenticated users can view all their past and upcoming bookings
 - **Auth-aware CTAs** — Unauthenticated users see "Login to Book" instead of "Book Now"
@@ -98,7 +98,7 @@ Production build serves the frontend bundle as static files from the Express ser
 | POST | `/api/bookings/payment-intent` | Yes | Create Stripe PaymentIntent |
 | POST | `/api/bookings` | Yes | Confirm booking after payment |
 | GET | `/api/bookings` | Yes | List current user's bookings |
-| POST | `/api/ai/chat` | Yes | AI concierge chat (SSE token stream) |
+| POST | `/api/ai/chat` | No | AI concierge chat (SSE token stream) |
 | POST | `/api/ai/parse-search` | No | Parse natural-language query into search filters |
 | POST | `/api/ai/generate-description` | Yes | AI-generated hotel marketing copy |
 | POST | `/api/ai/booking-email` | Yes | AI-generated booking confirmation email |
