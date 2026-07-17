@@ -13,7 +13,7 @@
 *   **CVC and ZIP:** `any number`
 
 
-A full-stack hotel booking management application built with **TypeScript** across the entire stack. Hotel owners can register, manage their properties with image uploads, and guests can search, browse, and book accommodations.
+A full-stack hotel booking management application built with **TypeScript** across the entire stack. Hotel owners can register, manage their properties with image uploads, and guests can search, browse, and book accommodations. Now featuring an **AI concierge** — a LangGraph-powered chat agent (switchable between **Groq Llama 3.3 70B** and **Gemini**) that finds hotels, answers questions, and guides bookings through natural conversation.
 
 ---
 
@@ -26,6 +26,7 @@ A full-stack hotel booking management application built with **TypeScript** acro
 | **Auth** | JWT (HttpOnly cookies), bcryptjs |
 | **File Upload** | Multer → Cloudinary (base64) |
 | **Validation** | express-validator |
+| **AI** | LangGraph agent, LangChain, MCP server, Groq (Llama 3.3 70B) / Gemini 2.5, SSE streaming |
 | **Frontend** | React 18, TypeScript, Vite 6, SWC |
 | **Styling** | Tailwind CSS 3 |
 | **State/Data** | react-query (TanStack), Context API |
@@ -67,6 +68,7 @@ Production build serves the frontend bundle as static files from the Express ser
 - **Facilities** — 8 amenity checkboxes (Free WiFi, Pool, Spa, etc.)
 - **Hotel Search** — Filter by destination, dates, guests, star rating, type, facilities, and max price with sort and pagination
 - **Hotel Detail Page** — Full hotel view with image gallery, facilities, and an inline booking panel (date picker, guest selector, live price total)
+- **AI Concierge Chat** — Floating chat widget (logged-in users) backed by a 6-node LangGraph agent with intent routing, hotel search via MCP tools, token-by-token SSE streaming, and a Groq/Gemini model selector
 - **Stripe Payment** — Checkout page with booking summary, Stripe card payment, and booking confirmation
 - **My Bookings** — Authenticated users can view all their past and upcoming bookings
 - **Auth-aware CTAs** — Unauthenticated users see "Login to Book" instead of "Book Now"
@@ -96,6 +98,10 @@ Production build serves the frontend bundle as static files from the Express ser
 | POST | `/api/bookings/payment-intent` | Yes | Create Stripe PaymentIntent |
 | POST | `/api/bookings` | Yes | Confirm booking after payment |
 | GET | `/api/bookings` | Yes | List current user's bookings |
+| POST | `/api/ai/chat` | Yes | AI concierge chat (SSE token stream) |
+| POST | `/api/ai/parse-search` | No | Parse natural-language query into search filters |
+| POST | `/api/ai/generate-description` | Yes | AI-generated hotel marketing copy |
+| POST | `/api/ai/booking-email` | Yes | AI-generated booking confirmation email |
 
 ---
 
@@ -124,6 +130,8 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 STRIPE_API_KEY=         # Stripe secret key (sk_test_...)
+GROQ_API_KEY=           # Groq API key (default AI provider)
+GOOGLE_API_KEY=         # Google AI Studio key (Gemini provider)
 ```
 
 **Required environment variables — `frontend/.env`:**
@@ -171,4 +179,5 @@ VITE_STRIPE_PUB_KEY=   # Stripe publishable key (pk_test_...)
 | **Booking UI** | Checkout page, booking summary, card form, user pre-fill | ✅ Complete |
 | **Booking Backend** | Booking model, creation route, My Bookings page | ✅ Complete |
 | **Payment** | Stripe PaymentIntent flow, card confirmation | ✅ Complete |
+| **AI Features** | Concierge chat agent (LangGraph + MCP), NL search parsing, AI descriptions & emails | ✅ Complete |
 | **Hardening** | Rate limiting, helmet, centralized error handling | ⏳ Planned |
